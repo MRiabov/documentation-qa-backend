@@ -4,8 +4,8 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    # Base URL to the TGI server, e.g., http://localhost:8080
-    TGI_BASE_URL: AnyHttpUrl = "http://tgi:80"  # docker-compose service name + internal port
+    # Base URL to the TGI server (monolithic image uses local TGI on port 80)
+    TGI_BASE_URL: AnyHttpUrl = "http://127.0.0.1:80"
 
     # Generation parameters
     MAX_NEW_TOKENS: int = 2048

@@ -6,7 +6,7 @@ A FastAPI backend that wraps a Hugging Face Text Generation Inference (TGI) serv
 - Prompts the model to return a strict JSON object containing proposed text replacements.
 - Validates replacements in the backend: uniqueness, no edits in fenced code blocks, inline code, or URLs, and no overlapping edits.
 - If valid, returns the updated document and a unified diff; otherwise, returns a `malformed_tool_call` error.
-- Ships with Docker and Docker Compose to run alongside TGI.
+- Ships as a single Docker image that runs TGI and the backend together.
 
 ## Architecture
 
@@ -98,41 +98,51 @@ type ReviewResponse = { version: string; issues: Issue[] };
 
 Code-edit policy: if the document contains a significant proportion of fenced code (configurable), the model may edit code blocks to add concise comments, fix formatting, and add code-fence language labels (e.g., ```py). Inline code and URLs remain off-limits. The model is instructed not to duplicate issues already reported by the linter. The backend also filters duplicates by span.
 
-## Running with Docker Compose (recommended)
+## Running as a single monolithic image (TGI + Backend)
 
-Prerequisites: Docker and docker-compose.
+For GPU providers that accept a single container image (no Docker-in-Docker), use the monolithic image. It starts the TGI server and the FastAPI backend in the same container.
 
-1. Copy the example env and set your HF token (required to download the model weights):
-
-```bash
-cp .env.example .env
-# Edit .env and set HF_TOKEN=hf_xxx
-```
-
-2. Start TGI + backend:
+Build:
 
 ```bash
-docker compose up --build
+docker build -t documentation-qa-monolith:latest .
 ```
 
-- TGI is exposed at `http://localhost:8080` and available to the backend at `http://tgi:80`.
-- Backend is exposed at `http://localhost:8000`.
+Run (GPU, large shared memory recommended):
 
-3. Health check:
+```bash
+export HF_TOKEN=hf_xxx             # required to download model weights
+docker run --gpus all \
+  --shm-size 2g \
+  -e HF_TOKEN \
+  -e MODEL_ID=meta-llama/Llama-3.1-8B-Instruct \
+  -e MAX_TOTAL_TOKENS=8192 \
+  -e WAITING_SERVED_RATE=2 \
+  -e QUANTIZE=bitsandbytes-nf4 \
+  -p 8000:8000 \
+  -v $(pwd)/data:/data \
+  documentation-qa-monolith:latest
+```
+
+The backend will be available at `http://localhost:8000`. Internally, it talks to TGI at `http://127.0.0.1:80` as managed by the container entrypoint.
+
+Environment variables:
+
+- `HF_TOKEN` — Hugging Face token to pull the model.
+- `MODEL_ID` — Model to serve (default `meta-llama/Llama-3.1-8B-Instruct`).
+- `MAX_TOTAL_TOKENS`, `WAITING_SERVED_RATE`, `QUANTIZE` — passed to TGI.
+- `HUGGINGFACE_HUB_CACHE=/data` — set in the image, mount a volume to persist downloads.
+
+Health check:
 
 ```bash
 curl -s http://localhost:8000/health | jq
 ```
 
-4. Run a review:
+### Additional Notes
 
-```bash
-curl -s http://localhost:8000/review \
-  -H 'Content-Type: application/json' \
-  -d '{"doc": "Use this to utilize the API.```\ncode\n``` Do not just simply overcomplicate."}' | jq
-```
-
-Note: The backend will reject ambiguous or forbidden replacements with a `422` error as described.
+- If your provider injects the GPU runtime automatically, you typically only need to supply the image and the environment variables above.
+- Make sure to grant at least ~2 GB shared memory if using flash attention or quantized models (TGI often benefits from larger `/dev/shm`).
 
 ## Local Dev (without Docker)
 
@@ -172,7 +182,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
   - No overlapping edits.
   - Otherwise, `422 malformed_tool_call` is returned with an explanation.
 - Adjust generation params in `app/config.py` or via env vars.
-- Default model in `docker-compose.yml` is `meta-llama/Llama-3.1-8B-Instruct`.
+- Default model is controlled via the `MODEL_ID` environment variable (defaults to `meta-llama/Llama-3.1-8B-Instruct`).
 
 ### Settings of interest
 

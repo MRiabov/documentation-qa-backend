@@ -40,7 +40,7 @@ Example response:
 {
   "status": "ok",
   "tgi": true,
-  "tgi_base_url": "http://tgi:80"
+  "tgi_base_url": "http://127.0.0.1:80"
 }
 ```
 
@@ -245,7 +245,7 @@ async function reviewDoc(doc: string): Promise<ReviewApplyResponse> {
 
 Configuration is defined in `app/config.py` and can be overridden via environment variables (`.env` file is supported):
 
-- `TGI_BASE_URL`: Base URL to TGI, e.g., `http://tgi:80`
+- `TGI_BASE_URL`: Base URL to TGI, e.g., `http://127.0.0.1:80` (default in the monolithic image)
 - `MAX_NEW_TOKENS`, `TEMPERATURE`, `TOP_P`, `STOP_SEQUENCES`: Generation parameters
 - `RETRIES_ON_MALFORMED`: Number of extra attempts when model output is malformed
 - `CODE_EDIT_THRESHOLD_RATIO`: If fraction of characters in fenced code >= threshold, code edits are allowed
