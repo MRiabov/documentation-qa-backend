@@ -1,0 +1,36 @@
+services:
+  tgi:
+    image: ghcr.io/huggingface/text-generation-inference:latest
+    container_name: tgi
+    environment:
+      - HUGGINGFACE_HUB_CACHE=/data
+      - HF_TOKEN=${HF_TOKEN}
+      - HF_HUB_ENABLE_HF_TRANSFER=1
+    shm_size: "2g"
+    volumes:
+      - ./data:/data
+    expose:
+      - "80"
+    command: >-
+      --model-id meta-llama/Llama-3.1-8B-Instruct
+      --max-total-tokens 8192
+      --waiting-served-rate 2
+      --quantize bitsandbytes-nf4
+
+    # Uncomment for GPU (requires NVIDIA Container Toolkit)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              count: 1
+
+  backend:
+    build: .
+    container_name: documentation-qa-backend
+    environment:
+      - TGI_BASE_URL=http://tgi:80
+    depends_on:
+      - tgi
+    ports:
+      - "8000:8000"
