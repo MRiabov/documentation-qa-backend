@@ -1,5 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.exception_handlers import http_exception_handler as fastapi_http_exception_handler
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .models import ReviewRequest, ReviewApplyResponse
 from .prompt import build_prompt
@@ -23,6 +26,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="https://docs-qa.dev")
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_redirect_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code in (404, 405):
+        return RedirectResponse(url="https://docs-qa.dev")
+    return await fastapi_http_exception_handler(request, exc)
 
 _tgi = TGIClient()
 _openrouter = OpenRouterClient()

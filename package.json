@@ -1,5 +1,11 @@
 {
   "dependencies": {
     "vercel": "^47.0.5"
+  },
+  "env": {
+    "PYTHONPATH": "."
+  },
+  "scripts": {
+    "vercel-set-up-java": "./scripts/vercel-set-up-java.sh"
   }
 }

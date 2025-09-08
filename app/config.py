@@ -34,7 +34,7 @@ class Settings(BaseSettings):
 
     # CORS
     # Provide a JSON array in env, e.g. ["https://your-site.netlify.app"]
-    CORS_ALLOW_ORIGINS: List[str] = []
+    CORS_ALLOW_ORIGINS: List[str] = ["https://docs-qa.dev"]
 
     # Pydantic v2-style config
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
