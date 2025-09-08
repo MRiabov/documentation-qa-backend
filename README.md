@@ -6,7 +6,7 @@ A FastAPI backend that wraps a Hugging Face Text Generation Inference (TGI) serv
 - Prompts the model to return a strict JSON object containing proposed text replacements.
 - Validates replacements in the backend: uniqueness, no edits in fenced code blocks, inline code, or URLs, and no overlapping edits.
 - If valid, returns the updated document and a unified diff; otherwise, returns a `malformed_tool_call` error.
-- Ships as a single Docker image that runs TGI and the backend together.
+- Ships with Docker and Docker Compose to run alongside TGI.
 
 ## Architecture
 
@@ -98,84 +98,38 @@ type ReviewResponse = { version: string; issues: Issue[] };
 
 Code-edit policy: if the document contains a significant proportion of fenced code (configurable), the model may edit code blocks to add concise comments, fix formatting, and add code-fence language labels (e.g., ```py). Inline code and URLs remain off-limits. The model is instructed not to duplicate issues already reported by the linter. The backend also filters duplicates by span.
 
-## Running as a single monolithic image (TGI + Backend)
+## Running with Docker Compose (two services)
 
-For GPU providers that accept a single container image (no Docker-in-Docker), use the monolithic image. It starts the TGI server and the FastAPI backend in the same container.
+Prerequisites: Docker and docker-compose.
 
-Build:
-
-```bash
-docker build -t documentation-qa-monolith:latest .
-```
-
-Run (GPU, large shared memory recommended):
-
-```bash
-export HF_TOKEN=hf_xxx             # required to download model weights
-docker run --gpus all \
-  --shm-size 2g \
-  -e HF_TOKEN \
-  -e MODEL_ID=meta-llama/Llama-3.1-8B-Instruct \
-  -e MAX_TOTAL_TOKENS=8192 \
-  -e WAITING_SERVED_RATE=2 \
-  -e QUANTIZE=bitsandbytes-nf4 \
-  -p 8000:8000 \
-  -v $(pwd)/data:/data \
-  documentation-qa-monolith:latest
-```
-
-The backend will be available at `http://localhost:8000`. Internally, it talks to TGI at `http://127.0.0.1:80` as managed by the container entrypoint.
-
-Environment variables:
-
-- `HF_TOKEN` — Hugging Face token to pull the model.
-- `MODEL_ID` — Model to serve (default `meta-llama/Llama-3.1-8B-Instruct`).
-- `MAX_TOTAL_TOKENS`, `WAITING_SERVED_RATE`, `QUANTIZE` — passed to TGI.
-- `HUGGINGFACE_HUB_CACHE=/data` — set in the image, mount a volume to persist downloads.
-
-### Expose publicly via Cloudflare Tunnel (baked in)
-
-This image includes a `cloudflared` binary and the entrypoint will start a Cloudflare Tunnel in the background when a tunnel token is provided. This lets a single container serve your backend at a custom hostname like `https://backend.docs-qa.dev` without opening inbound ports.
-
-Prerequisites in your Cloudflare account:
-
-- Create a named Tunnel in Zero Trust (Cloudflare Dashboard).
-- Configure a Public Hostname `backend.docs-qa.dev` that routes to the service `http://localhost:8000`.
-- Copy the Tunnel token (Dashboard > Access > Tunnels > [your tunnel] > Connect > "Use Cloudflared" token).
-
-<!-- Note: if ever return from monolith, it's possible to set up a docker container instead: https://hub.docker.com/r/cloudflare/cloudflared -->
-
-Run the container with the token:
+1. Export your HF token (required to download the model weights):
 
 ```bash
 export HF_TOKEN=hf_xxx
-export CLOUDFLARED_TOKEN=eyJhIjoi...  # your tunnel token
-docker run --gpus all \
-  --shm-size 2g \
-  -e HF_TOKEN \
-  -e CLOUDFLARED_TOKEN \
-  -e MODEL_ID=meta-llama/Llama-3.1-8B-Instruct \
-  -p 8000:8000 \
-  -v $(pwd)/data:/data \
-  documentation-qa-monolith:latest
 ```
 
-Notes:
+1. Start TGI + backend:
 
-- If you used a different env name, `TUNNEL_TOKEN` is also recognized by the entrypoint.
-- The tunnel makes only outbound connections; many GPU providers permit this even when inbound is blocked.
-- Ensure your Tunnel ingress rule in Cloudflare routes to `http://localhost:8000` so requests reach the backend inside the same container.
+```bash
+docker compose up --build
+```
 
-Health check:
+- Backend is exposed at `http://localhost:8000`.
+- TGI is available to the backend at `http://tgi:80` inside the compose network.
+
+1. Health check:
 
 ```bash
 curl -s http://localhost:8000/health | jq
 ```
 
-### Additional Notes
+1. Run a review:
 
-- If your provider injects the GPU runtime automatically, you typically only need to supply the image and the environment variables above.
-- Make sure to grant at least ~2 GB shared memory if using flash attention or quantized models (TGI often benefits from larger `/dev/shm`).
+```bash
+curl -s http://localhost:8000/review \
+  -H 'Content-Type: application/json' \
+  -d '{"doc": "Use this to utilize the API.```\ncode\n``` Do not just simply overcomplicate."}' | jq
+```
 
 ## Local Dev (without Docker)
 
@@ -207,6 +161,41 @@ Then set the backend to talk to your local TGI:
 export TGI_BASE_URL=http://localhost:8080
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+## Deploy to Vercel (Python-only)
+
+- Prerequisites: Vercel account and the Vercel CLI installed (`npm i -g vercel`).
+- Files included for Vercel:
+  - `api/index.py` — imports `app` from `app.main` for ASGI.
+  - `vercel.json` — configures the Python runtime and routes all paths to `api/index.py`. It also disables the LanguageTool linter on Vercel, where Java is not available by default.
+
+- Configure environment variables (Dashboard or CLI):
+  - `ENABLE_LINTER=false` — already set in `vercel.json` for Vercel.
+  - `TGI_BASE_URL=<https URL of your ML inference>` — optional until you bring ML online. Without a reachable TGI, `/review` will return an error; `/health` will show `tgi: false`.
+
+- Deploy:
+
+  ```bash
+  vercel login
+  vercel link
+  vercel deploy --prod
+  ```
+
+- Local dev via Vercel:
+
+  ```bash
+  vercel dev
+  ```
+
+  This uses the `devCommand` in `vercel.json` to run `uvicorn` on port 3000.
+
+- Notes and limits on Vercel Serverless:
+  - No long-running background processes (e.g., autossh daemons) inside serverless functions.
+  - Cold starts and execution timeouts apply; long TGI generations may time out on free plans.
+  - For private ML backends, prefer exposing HTTPS with auth or a managed reverse tunnel. Persistent SSH tunnels are not supported in serverless.
+
+- Future “autossh” plan:
+  - If you need a tunnel, run it on the ML host (initiated from the ML side), not on Vercel. Then set `TGI_BASE_URL` to the public endpoint exposed by that tunnel.
 
 ## Notes
 

@@ -142,3 +142,5 @@ lora_out/
 
 #ruff
 .ruff_cache/
+
+node_modules/
