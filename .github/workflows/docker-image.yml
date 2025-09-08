@@ -27,6 +27,7 @@ jobs:
 
       - name: Build Docker image
         run: |
+          # Bash lowercase expansion: ${GITHUB_REPOSITORY,,} converts the repository name to lowercase for GHCR
           IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}/backend
           docker build . --file Dockerfile \
             --tag $IMAGE_NAME:latest \
@@ -34,6 +35,7 @@ jobs:
 
       - name: Push Docker image
         run: |
+          # Bash lowercase expansion: ${GITHUB_REPOSITORY,,} converts the repository name to lowercase for GHCR
           IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}/backend
           docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:${GITHUB_SHA}
