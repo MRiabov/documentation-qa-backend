@@ -1,5 +1,5 @@
 from pydantic import AnyHttpUrl
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 
 
@@ -36,9 +36,8 @@ class Settings(BaseSettings):
     # Provide a JSON array in env, e.g. ["https://your-site.netlify.app"]
     CORS_ALLOW_ORIGINS: List[str] = []
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    # Pydantic v2-style config
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 
 
 settings = Settings()

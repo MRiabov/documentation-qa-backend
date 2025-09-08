@@ -144,3 +144,6 @@ lora_out/
 .ruff_cache/
 
 node_modules/
+.vercel/cache/
+.vercel/
+.vercel/project.json

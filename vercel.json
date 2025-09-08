@@ -1,13 +1,15 @@
 {
-  "devCommand": "uvicorn app.main:app --host 0.0.0.0 --port 3000",
+  "version": 2,
   "builds": [
-    { "src": "api/index.py", "use": "@vercel/python" }
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "api/index.py" }
-  ],
-  "env": {
-    "ENABLE_LINTER": "false",
-    "TGI_BASE_URL": "http://localhost:8080"
-  }
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
+    }
+  ]
 }

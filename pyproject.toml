@@ -1,0 +1,17 @@
+[project]
+name = "documentation-qa-backend-api"
+version = "0.0.0"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi==0.116.1",
+  "httpx==0.28.1",
+  "pydantic==2.11.7",
+  "pydantic-settings==2.10.1",
+  "language-tool-python==2.9.4",
+]
+
+[build-system]
+requires = ["hatchling>=1.18.0"]
+build-backend = "hatchling.build"
+
+
