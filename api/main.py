@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from fastapi.exception_handlers import http_exception_handler as fastapi_http_exception_handler
+from fastapi.exception_handlers import (
+    http_exception_handler as fastapi_http_exception_handler,
+)
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.app.models import ReviewRequest, ReviewApplyResponse
@@ -13,7 +15,12 @@ from api.app.replacements import plan_replacements, apply_plans
 from api.app.diffing import unified_diff
 from api.app.errors import MalformedToolCall
 from api.app.config import settings
-from api.app.regions import fenced_code_spans, inline_code_spans, url_spans, forbidden_spans
+from api.app.regions import (
+    fenced_code_spans,
+    inline_code_spans,
+    url_spans,
+    forbidden_spans,
+)
 from api.app.linter import lint_doc
 
 app = FastAPI(title="Documentation QA Backend", version="0.1.0")
@@ -27,18 +34,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/", include_in_schema=False)
 async def root():
     return RedirectResponse(url="https://docs-qa.dev")
 
+
 @app.exception_handler(StarletteHTTPException)
-async def http_exception_redirect_handler(request: Request, exc: StarletteHTTPException):
+async def http_exception_redirect_handler(
+    request: Request, exc: StarletteHTTPException
+):
     if exc.status_code in (404, 405):
         return RedirectResponse(url="https://docs-qa.dev")
     return await fastapi_http_exception_handler(request, exc)
 
+
 _tgi = TGIClient()
 _openrouter = OpenRouterClient()
+
 
 @app.on_event("shutdown")
 async def _shutdown():
@@ -103,7 +116,9 @@ async def review(req: ReviewRequest):
                 req.doc,
                 feedback=feedback,
                 allow_code_edits=allow_code_edits,
-                lint_issues=[li.model_dump() for li in lint_issues] if lint_issues else None,
+                lint_issues=[li.model_dump() for li in lint_issues]
+                if lint_issues
+                else None,
             )
             # Route to TGI when healthy; otherwise use OpenRouter fallback.
             # If TGI errors on request, automatically fall back.
@@ -151,4 +166,7 @@ async def review(req: ReviewRequest):
             feedback = e.reason
             continue
 
-    raise HTTPException(status_code=422, detail={"error": "malformed_tool_call", "reason": last_error or "unknown"})
+    raise HTTPException(
+        status_code=422,
+        detail={"error": "malformed_tool_call", "reason": last_error or "unknown"},
+    )

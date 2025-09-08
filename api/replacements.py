@@ -45,7 +45,9 @@ def _find_allowed_occurrences(doc: str, needle: str, blocked: List[Span]) -> Lis
     return positions
 
 
-def plan_replacements(doc: str, issues: List[Issue], *, allow_code_edits: bool = False) -> List[ReplacementPlan]:
+def plan_replacements(
+    doc: str, issues: List[Issue], *, allow_code_edits: bool = False
+) -> List[ReplacementPlan]:
     if allow_code_edits:
         # Allow edits inside fenced code, but still block inline code and URLs
         fences = fenced_code_spans(doc)
@@ -67,7 +69,11 @@ def plan_replacements(doc: str, issues: List[Issue], *, allow_code_edits: bool =
             )
         start = positions[0]
         end = start + len(needle)
-        plans.append(ReplacementPlan(start=start, end=end, replacement=issue.replace_with, issue_id=issue.id))
+        plans.append(
+            ReplacementPlan(
+                start=start, end=end, replacement=issue.replace_with, issue_id=issue.id
+            )
+        )
 
     # Ensure no overlapping edits
     plans_sorted = sorted(plans, key=lambda p: (p.start, p.end))
@@ -86,7 +92,7 @@ def apply_plans(doc: str, plans: List[ReplacementPlan]) -> str:
     parts: List[str] = []
     cursor = 0
     for p in plans:
-        parts.append(doc[cursor:p.start])
+        parts.append(doc[cursor : p.start])
         parts.append(p.replacement)
         cursor = p.end
     parts.append(doc[cursor:])

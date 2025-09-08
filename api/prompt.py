@@ -43,7 +43,7 @@ def build_prompt(
         "",
         "Return ONLY a JSON object inside <json>…</json> matching this TypeScript schema:",
         "",
-        "type Severity = \"info\" | \"warning\" | \"error\";",
+        'type Severity = "info" | "warning" | "error";',
         "type Issue = {",
         "  id: string;",
         "  rule: string;",

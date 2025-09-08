@@ -3,7 +3,12 @@ from api.app.config import settings
 
 
 class OpenRouterClient:
-    def __init__(self, base_url: str | None = None, api_key: str | None = None, model: str | None = None):
+    def __init__(
+        self,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        model: str | None = None,
+    ):
         self.base_url = base_url or str(settings.OPENROUTER_BASE_URL)
         self.api_key = api_key or settings.OPENROUTER_FALLBACK_KEY
         self.model = model or settings.OPENROUTER_MODEL
@@ -17,12 +22,16 @@ class OpenRouterClient:
                 # "HTTP-Referer": "",  # e.g., your site URL
                 # "X-Title": "Documentation QA Backend",
             }
-            self._client = httpx.AsyncClient(base_url=self.base_url, headers=headers, timeout=httpx.Timeout(60.0))
+            self._client = httpx.AsyncClient(
+                base_url=self.base_url, headers=headers, timeout=httpx.Timeout(60.0)
+            )
         return self._client
 
     async def generate(self, prompt: str) -> str:
         # Ensure key is present only when actually using the fallback
-        assert self.api_key is not None, "OPENROUTER_FALLBACK_KEY is required for fallback generation"
+        assert self.api_key is not None, (
+            "OPENROUTER_FALLBACK_KEY is required for fallback generation"
+        )
         client = await self._get_client()
         payload = {
             "model": self.model,

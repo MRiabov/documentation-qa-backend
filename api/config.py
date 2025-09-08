@@ -19,10 +19,14 @@ class Settings(BaseSettings):
     OPENROUTER_FALLBACK_KEY: Optional[str] = None
 
     # Regeneration behavior
-    RETRIES_ON_MALFORMED: int = 1  # number of extra attempts when model output is malformed
+    RETRIES_ON_MALFORMED: int = (
+        1  # number of extra attempts when model output is malformed
+    )
 
     # Code editing behavior
-    CODE_EDIT_THRESHOLD_RATIO: float = 0.15  # if >= fraction of chars in fenced code, allow code edits
+    CODE_EDIT_THRESHOLD_RATIO: float = (
+        0.15  # if >= fraction of chars in fenced code, allow code edits
+    )
 
     # Linter configuration
     ENABLE_LINTER: bool = True
@@ -37,7 +41,9 @@ class Settings(BaseSettings):
     CORS_ALLOW_ORIGINS: List[str] = ["https://docs-qa.dev"]
 
     # Pydantic v2-style config
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=True, extra="ignore"
+    )
 
 
 settings = Settings()
