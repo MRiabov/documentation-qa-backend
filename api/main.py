@@ -4,17 +4,17 @@ from fastapi.responses import RedirectResponse
 from fastapi.exception_handlers import http_exception_handler as fastapi_http_exception_handler
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .models import ReviewRequest, ReviewApplyResponse
-from .prompt import build_prompt
-from .tgi import TGIClient
-from .openrouter import OpenRouterClient
-from .parsing import parse_review_response
-from .replacements import plan_replacements, apply_plans
-from .diffing import unified_diff
-from .errors import MalformedToolCall
-from .config import settings
-from .regions import fenced_code_spans, inline_code_spans, url_spans, forbidden_spans
-from .linter import lint_doc
+from api.app.models import ReviewRequest, ReviewApplyResponse
+from api.app.prompt import build_prompt
+from api.app.tgi import TGIClient
+from api.app.openrouter import OpenRouterClient
+from api.app.parsing import parse_review_response
+from api.app.replacements import plan_replacements, apply_plans
+from api.app.diffing import unified_diff
+from api.app.errors import MalformedToolCall
+from api.app.config import settings
+from api.app.regions import fenced_code_spans, inline_code_spans, url_spans, forbidden_spans
+from api.app.linter import lint_doc
 
 app = FastAPI(title="Documentation QA Backend", version="0.1.0")
 

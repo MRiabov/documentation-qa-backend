@@ -1,5 +1,5 @@
 import httpx
-from .config import settings
+from api.app.config import settings
 
 
 class TGIClient:
@@ -9,7 +9,9 @@ class TGIClient:
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
-            self._client = httpx.AsyncClient(base_url=self.base_url, timeout=httpx.Timeout(60.0))
+            self._client = httpx.AsyncClient(
+                base_url=self.base_url, timeout=httpx.Timeout(60.0)
+            )
         return self._client
 
     async def health(self) -> bool:
@@ -39,7 +41,12 @@ class TGIClient:
         if isinstance(data, dict) and "generated_text" in data:
             return data["generated_text"]
         # Some TGI variants return a list with one item
-        if isinstance(data, list) and data and isinstance(data[0], dict) and "generated_text" in data[0]:
+        if (
+            isinstance(data, list)
+            and data
+            and isinstance(data[0], dict)
+            and "generated_text" in data[0]
+        ):
             return data[0]["generated_text"]
         # Fallback: return the whole string representation
         return str(data)

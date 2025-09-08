@@ -5,7 +5,7 @@ from typing import List
 
 import language_tool_python as lt
 
-from .models import LintIssue, Severity
+from api.app.models import LintIssue, Severity
 
 
 @lru_cache(maxsize=1)

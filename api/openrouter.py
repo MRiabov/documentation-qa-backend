@@ -1,5 +1,5 @@
 import httpx
-from .config import settings
+from api.app.config import settings
 
 
 class OpenRouterClient:
