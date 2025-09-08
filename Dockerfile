@@ -18,6 +18,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     curl \
+    # Add Cloudflare apt repo and install cloudflared (official method)
+    #as from docs: https://pkg.cloudflare.com/index.html#debian-any
+    && mkdir -p --mode=0755 /usr/share/keyrings \
+    && curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg -o /usr/share/keyrings/cloudflare-main.gpg \
+    && echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' > /etc/apt/sources.list.d/cloudflared.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends cloudflared \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
@@ -39,3 +46,4 @@ EXPOSE 8000
 
 # Start both TGI and the FastAPI server
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+

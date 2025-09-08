@@ -133,6 +133,39 @@ Environment variables:
 - `MAX_TOTAL_TOKENS`, `WAITING_SERVED_RATE`, `QUANTIZE` — passed to TGI.
 - `HUGGINGFACE_HUB_CACHE=/data` — set in the image, mount a volume to persist downloads.
 
+### Expose publicly via Cloudflare Tunnel (baked in)
+
+This image includes a `cloudflared` binary and the entrypoint will start a Cloudflare Tunnel in the background when a tunnel token is provided. This lets a single container serve your backend at a custom hostname like `https://backend.docs-qa.dev` without opening inbound ports.
+
+Prerequisites in your Cloudflare account:
+
+- Create a named Tunnel in Zero Trust (Cloudflare Dashboard).
+- Configure a Public Hostname `backend.docs-qa.dev` that routes to the service `http://localhost:8000`.
+- Copy the Tunnel token (Dashboard > Access > Tunnels > [your tunnel] > Connect > "Use Cloudflared" token).
+
+<!-- Note: if ever return from monolith, it's possible to set up a docker container instead: https://hub.docker.com/r/cloudflare/cloudflared -->
+
+Run the container with the token:
+
+```bash
+export HF_TOKEN=hf_xxx
+export CLOUDFLARED_TOKEN=eyJhIjoi...  # your tunnel token
+docker run --gpus all \
+  --shm-size 2g \
+  -e HF_TOKEN \
+  -e CLOUDFLARED_TOKEN \
+  -e MODEL_ID=meta-llama/Llama-3.1-8B-Instruct \
+  -p 8000:8000 \
+  -v $(pwd)/data:/data \
+  documentation-qa-monolith:latest
+```
+
+Notes:
+
+- If you used a different env name, `TUNNEL_TOKEN` is also recognized by the entrypoint.
+- The tunnel makes only outbound connections; many GPU providers permit this even when inbound is blocked.
+- Ensure your Tunnel ingress rule in Cloudflare routes to `http://localhost:8000` so requests reach the backend inside the same container.
+
 Health check:
 
 ```bash
