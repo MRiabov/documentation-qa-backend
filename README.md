@@ -19,7 +19,7 @@ A FastAPI backend that wraps a Hugging Face Text Generation Inference (TGI) serv
 - `app/diffing.py` — Unified diff generation.
 - `app/models.py` — Pydantic models for request/response and schema the model must follow.
 - `app/config.py` — Settings via environment variables.
-- `app/linter.py` — LanguageTool-based grammatical/punctuation linter.
+- `app/linter.py` — proselint-based style/grammar linter (no Java required).
 
 ## API
 
@@ -167,10 +167,10 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 - Prerequisites: Vercel account and the Vercel CLI installed (`npm i -g vercel`).
 - Files included for Vercel:
   - `api/index.py` — imports `app` from `app.main` for ASGI.
-  - `vercel.json` — configures the Python runtime and routes all paths to `api/index.py`. It also disables the LanguageTool linter on Vercel, where Java is not available by default.
+  - `vercel.json` — configures the Python runtime and routes all paths to `api/index.py`.
 
 - Configure environment variables (Dashboard or CLI):
-  - `ENABLE_LINTER=false` — already set in `vercel.json` for Vercel.
+  - `ENABLE_LINTER=false` — optional if you want to disable linting on Vercel (defaults to enabled). Proselint does not require Java and works on Vercel.
   - `TGI_BASE_URL=<https URL of your ML inference>` — optional until you bring ML online. Without a reachable TGI, `/review` will return an error; `/health` will show `tgi: false`.
 
 - Deploy:
@@ -210,8 +210,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ### Settings of interest
 
 - `CODE_EDIT_THRESHOLD_RATIO` — if the fraction of characters inside fenced code blocks >= this ratio (default 0.15), allow code edits.
-- `ENABLE_LINTER` — enable LanguageTool linter (default true). Requires Java (already installed in Dockerfile).
-- `LINTER_LANGUAGE` — LanguageTool language code (default `en-US`).
+- `ENABLE_LINTER` — enable proselint (default true).
+- `LINTER_LANGUAGE` — expected English locale (e.g., `en-US`). Proselint currently supports English.
 
 ## License
 

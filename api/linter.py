@@ -1,45 +1,39 @@
 from __future__ import annotations
 
-from functools import lru_cache
 from typing import List
 
-import language_tool_python as lt
+from proselint.tools import lint as proselint_lint
 
 from api.models import LintIssue, Severity
 
 
-@lru_cache(maxsize=1)
-def _get_tool(lang: str) -> lt.LanguageTool:
-    return lt.LanguageTool(lang)
-
-
-def _to_severity(issue_type: str) -> Severity:
-    t = (issue_type or "").lower()
-    if "misspelling" in t or "typographical" in t:
-        return Severity.warning
-    if "grammar" in t:
+def _to_severity(sev: str) -> Severity:
+    s = (sev or "").lower()
+    if s == "error":
         return Severity.error
-    if "punctuation" in t:
+    if s == "warning":
         return Severity.warning
+    # proselint may return "suggestion"; map to info by default
     return Severity.info
 
 
 def lint_doc(doc: str, language: str) -> List[LintIssue]:
-    tool = _get_tool(language)
-    matches = tool.check(doc)
+    # proselint supports English; enforce expected locale
+    assert language.lower().startswith("en"), "proselint supports English only"
+
+    suggestions = proselint_lint(doc)
     issues: List[LintIssue] = []
-    for m in matches:
-        start = m.offset
-        end = m.offset + m.errorLength
-        # Ensure indices are sensible; rely on language-tool offsets being correct
-        if start < 0 or end < 0 or end < start or end > len(doc):
-            continue
+    for s in suggestions:
+        # Tuple format: (check, message, line, column, start, end, extent, severity, replacements)
+        check, message, _line, _col, start, end, _extent, severity, _repls = s
+        # Ensure indices are within the document bounds
+        assert 0 <= start <= end <= len(doc)
         issues.append(
             LintIssue(
-                id=f"{m.ruleId}:{start}",
-                rule=m.ruleId,
-                message=m.message,
-                severity=_to_severity(getattr(m, "ruleIssueType", "")),
+                id=f"{check}:{start}",
+                rule=check,
+                message=message,
+                severity=_to_severity(severity),
                 start=start,
                 end=end,
             )

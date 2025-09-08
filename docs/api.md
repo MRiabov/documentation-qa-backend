@@ -162,7 +162,7 @@ All types adhere to Pydantic models in `app/models.py`.
 
 - The service returns both AI model suggestions and linter findings:
   - `llm_review.issues`: issues from the model with deterministic replacements (`replace_text` -> `replace_with`).
-  - `lint_issues`: issues from the linter (LanguageTool), already applied/considered during generation and for duplicate filtering.
+  - `lint_issues`: issues from the linter (proselint), already applied/considered during generation and for duplicate filtering.
 - The backend filters model issues that duplicate linter findings when they can be uniquely located.
 - The unified `diff` is standard unified diff text; display as-is or compute patches client-side.
 - `updated_doc` is the original document with all accepted deterministic replacements applied.
@@ -249,7 +249,7 @@ Configuration is defined in `app/config.py` and can be overridden via environmen
 - `MAX_NEW_TOKENS`, `TEMPERATURE`, `TOP_P`, `STOP_SEQUENCES`: Generation parameters
 - `RETRIES_ON_MALFORMED`: Number of extra attempts when model output is malformed
 - `CODE_EDIT_THRESHOLD_RATIO`: If fraction of characters in fenced code >= threshold, code edits are allowed
-- `ENABLE_LINTER`, `LINTER_LANGUAGE`: Linter toggles
+- `ENABLE_LINTER`, `LINTER_LANGUAGE`: Linter toggles (proselint; English-only)
 - `HOST`, `PORT`: Server bind (defaults `0.0.0.0:8000`)
 
 ## Changelog

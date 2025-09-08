@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from api.app.models import Issue
-from api.app.errors import MalformedToolCall
-from api.app.regions import (
+from api.models import Issue
+from api.errors import MalformedToolCall
+from api.regions import (
     forbidden_spans,
     spans_intersect,
     fenced_code_spans,

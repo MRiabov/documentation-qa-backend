@@ -5,7 +5,5 @@
   "env": {
     "PYTHONPATH": "."
   },
-  "scripts": {
-    "vercel-set-up-java": "./scripts/vercel-set-up-java.sh"
-  }
+  "scripts": {}
 }
