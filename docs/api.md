@@ -76,7 +76,7 @@ Example success response (truncated):
   "version": "x.y.z",
   "diff": "--- original\n+++ updated\n@@\n-This is teh example\n+This is the example\n",
   "updated_doc": "This is the example with a url http://example.com and a code block ```py\nprint(1)\n```",
-  "model_review": {
+  "llm_review": {
     "version": "x.y.z",
     "issues": [
       {
@@ -155,13 +155,13 @@ All types adhere to Pydantic models in `app/models.py`.
 - `version`: string
 - `diff`: string (unified diff between original and updated)
 - `updated_doc`: string
-- `model_review`: `ReviewResponse`
+- `llm_review`: `ReviewResponse`
 - `lint_issues`: `LintIssue[]`
 
 ## Frontend Integration Notes
 
 - The service returns both AI model suggestions and linter findings:
-  - `model_review.issues`: issues from the model with deterministic replacements (`replace_text` -> `replace_with`).
+  - `llm_review.issues`: issues from the model with deterministic replacements (`replace_text` -> `replace_with`).
   - `lint_issues`: issues from the linter (LanguageTool), already applied/considered during generation and for duplicate filtering.
 - The backend filters model issues that duplicate linter findings when they can be uniquely located.
 - The unified `diff` is standard unified diff text; display as-is or compute patches client-side.
@@ -220,7 +220,7 @@ type ReviewApplyResponse = {
   version: string;
   diff: string;
   updated_doc: string;
-  model_review: ReviewResponse;
+  llm_review: ReviewResponse;
   lint_issues: LintIssue[];
 };
 

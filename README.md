@@ -39,7 +39,7 @@ On success (200):
   "version": "1.0",
   "diff": "--- doc_before.md\n+++ doc_after.md\n@@ ...",
   "updated_doc": "# My README... (updated)",
-  "model_review": {
+  "llm_review": {
     "version": "1.0",
     "issues": [
       {
@@ -205,6 +205,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
   - Otherwise, `422 malformed_tool_call` is returned with an explanation.
 - Adjust generation params in `app/config.py` or via env vars.
 - Default model is controlled via the `MODEL_ID` environment variable (defaults to `meta-llama/Llama-3.1-8B-Instruct`).
+- When in dev, don't forget to `source .env`.
 
 ### Settings of interest
 

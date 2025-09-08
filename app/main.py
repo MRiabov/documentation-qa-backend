@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from .models import ReviewRequest, ReviewApplyResponse
 from .prompt import build_prompt
 from .tgi import TGIClient
+from .openrouter import OpenRouterClient
 from .parsing import parse_review_response
 from .replacements import plan_replacements, apply_plans
 from .diffing import unified_diff
@@ -12,18 +14,36 @@ from .regions import fenced_code_spans, inline_code_spans, url_spans, forbidden_
 from .linter import lint_doc
 
 app = FastAPI(title="Documentation QA Backend", version="0.1.0")
-_tgi = TGIClient()
 
+# CORS (configure allowed origins via settings.CORS_ALLOW_ORIGINS)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ALLOW_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+_tgi = TGIClient()
+_openrouter = OpenRouterClient()
 
 @app.on_event("shutdown")
 async def _shutdown():
     await _tgi.aclose()
+    await _openrouter.aclose()
 
 
 @app.get("/health")
 async def health():
     tgi_ok = await _tgi.health()
-    return {"status": "ok", "tgi": tgi_ok, "tgi_base_url": str(settings.TGI_BASE_URL)}
+    fallback_enabled = settings.OPENROUTER_FALLBACK_KEY is not None
+    return {
+        "status": "ok",
+        "tgi": tgi_ok,
+        "tgi_base_url": str(settings.TGI_BASE_URL),
+        "openrouter_fallback": fallback_enabled,
+        "openrouter_model": settings.OPENROUTER_MODEL,
+    }
 
 
 @app.post("/review", response_model=ReviewApplyResponse)
@@ -72,7 +92,17 @@ async def review(req: ReviewRequest):
                 allow_code_edits=allow_code_edits,
                 lint_issues=[li.model_dump() for li in lint_issues] if lint_issues else None,
             )
-            raw = await _tgi.generate(prompt)
+            # Route to TGI when healthy; otherwise use OpenRouter fallback.
+            # If TGI errors on request, automatically fall back.
+            raw: str
+            tgi_ok = await _tgi.health()
+            if tgi_ok:
+                try:
+                    raw = await _tgi.generate(prompt)
+                except Exception:
+                    raw = await _openrouter.generate(prompt)
+            else:
+                raw = await _openrouter.generate(prompt)
             review = parse_review_response(raw)
 
             # Filter out model issues that duplicate linter spans when uniquely locatable
@@ -100,7 +130,7 @@ async def review(req: ReviewRequest):
                 version=review.version,
                 diff=diff,
                 updated_doc=updated,
-                model_review=review,
+                llm_review=review,
                 lint_issues=lint_issues,
             )
         except MalformedToolCall as e:

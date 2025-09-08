@@ -30,6 +30,7 @@ services:
     container_name: documentation-qa-backend
     environment:
       - TGI_BASE_URL=http://tgi:80
+      - OPENROUTER_FALLBACK_KEY=${OPENROUTER_FALLBACK_KEY}
     depends_on:
       - tgi
     ports:

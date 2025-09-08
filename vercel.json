@@ -6,10 +6,8 @@
   "routes": [
     { "src": "/(.*)", "dest": "api/index.py" }
   ],
-  "functions": {
-    "api/**/*.py": { "runtime": "python3.11" }
-  },
   "env": {
-    "ENABLE_LINTER": "false"
+    "ENABLE_LINTER": "false",
+    "TGI_BASE_URL": "http://localhost:8080"
   }
 }

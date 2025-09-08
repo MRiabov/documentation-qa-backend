@@ -51,5 +51,5 @@ class ReviewApplyResponse(BaseModel):
     version: str
     diff: str
     updated_doc: str
-    model_review: ReviewResponse
+    llm_review: ReviewResponse
     lint_issues: List[LintIssue]

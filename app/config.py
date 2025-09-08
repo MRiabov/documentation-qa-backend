@@ -1,6 +1,6 @@
 from pydantic import AnyHttpUrl
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     TEMPERATURE: float = 0.0
     TOP_P: float = 0.9
     STOP_SEQUENCES: List[str] = ["</json>"]
+
+    # OpenRouter fallback
+    OPENROUTER_BASE_URL: AnyHttpUrl = "https://openrouter.ai/api/v1"
+    OPENROUTER_MODEL: str = "moonshotai/kimi-k2:free"
+    OPENROUTER_FALLBACK_KEY: Optional[str] = None
 
     # Regeneration behavior
     RETRIES_ON_MALFORMED: int = 1  # number of extra attempts when model output is malformed
@@ -26,6 +31,10 @@ class Settings(BaseSettings):
     # API
     HOST: str = "0.0.0.0"
     PORT: int = 8000
+
+    # CORS
+    # Provide a JSON array in env, e.g. ["https://your-site.netlify.app"]
+    CORS_ALLOW_ORIGINS: List[str] = []
 
     class Config:
         env_file = ".env"
