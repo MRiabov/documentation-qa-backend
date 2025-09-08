@@ -6,22 +6,22 @@ from fastapi.exception_handlers import (
 )
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from api.app.models import ReviewRequest, ReviewApplyResponse
-from api.app.prompt import build_prompt
-from api.app.tgi import TGIClient
-from api.app.openrouter import OpenRouterClient
-from api.app.parsing import parse_review_response
-from api.app.replacements import plan_replacements, apply_plans
-from api.app.diffing import unified_diff
-from api.app.errors import MalformedToolCall
-from api.app.config import settings
-from api.app.regions import (
+from api.models import ReviewRequest, ReviewApplyResponse
+from api.prompt import build_prompt
+from api.tgi import TGIClient
+from api.openrouter import OpenRouterClient
+from api.parsing import parse_review_response
+from api.replacements import plan_replacements, apply_plans
+from api.diffing import unified_diff
+from api.errors import MalformedToolCall
+from api.config import settings
+from api.regions import (
     fenced_code_spans,
     inline_code_spans,
     url_spans,
     forbidden_spans,
 )
-from api.app.linter import lint_doc
+from api.linter import lint_doc
 
 app = FastAPI(title="Documentation QA Backend", version="0.1.0")
 
@@ -79,7 +79,7 @@ async def review(req: ReviewRequest):
     code_ratio = (sum(e - s for s, e in fences) / len(req.doc)) if req.doc else 0.0
     allow_code_edits = code_ratio >= settings.CODE_EDIT_THRESHOLD_RATIO
 
-    # Lint document using LanguageTool
+    # Lint document using proselint
     lint_issues = []
     if settings.ENABLE_LINTER:
         lint_issues = lint_doc(req.doc, settings.LINTER_LANGUAGE)

@@ -1,6 +1,6 @@
 import json
-from api.app.models import ReviewResponse
-from api.app.errors import MalformedToolCall
+from api.models import ReviewResponse
+from api.errors import MalformedToolCall
 
 
 def extract_json_text(text: str) -> str:
