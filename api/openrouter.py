@@ -33,7 +33,9 @@ class OpenRouterClient:
             "OPENROUTER_FALLBACK_KEY is required for fallback generation"
         )
         client = await self._get_client()
-        payload = {
+        # Prefer strict JSON schema to guarantee well-formed output.
+        # If the model doesn't support json_schema, fall back to json_object.
+        json_schema_payload = {
             "model": self.model,
             "messages": [
                 {"role": "user", "content": prompt},
@@ -43,8 +45,78 @@ class OpenRouterClient:
             "top_p": settings.TOP_P,
             "stop": settings.STOP_SEQUENCES,
             "stream": False,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "ReviewResponse",
+                    "schema": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "properties": {
+                            "version": {"type": "string"},
+                            "issues": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "additionalProperties": False,
+                                    "properties": {
+                                        "id": {"type": "string"},
+                                        "rule": {"type": "string"},
+                                        "message": {"type": "string"},
+                                        "severity": {
+                                            "type": "string",
+                                            "enum": ["info", "warning", "error"],
+                                        },
+                                        "replace_text": {"type": "string"},
+                                        "replace_with": {"type": "string"},
+                                        "replacement": {"type": "string"},
+                                        "replacements": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": False,
+                                                "properties": {
+                                                    "label": {"type": "string"},
+                                                    "text": {"type": "string"},
+                                                },
+                                                "required": ["label", "text"],
+                                            },
+                                        },
+                                    },
+                                    "required": [
+                                        "id",
+                                        "rule",
+                                        "message",
+                                        "severity",
+                                        "replace_text",
+                                        "replace_with",
+                                    ],
+                                },
+                            },
+                        },
+                        "required": ["version", "issues"],
+                    },
+                },
+            },
         }
-        resp = await client.post("/chat/completions", json=payload)
+
+        resp = await client.post("/chat/completions", json=json_schema_payload)
+        if resp.status_code >= 400:
+            # Fallback to generic JSON object mode when schema constraints aren't supported
+            json_object_payload = {
+                "model": self.model,
+                "messages": [
+                    {"role": "user", "content": prompt},
+                ],
+                "max_tokens": settings.MAX_NEW_TOKENS,
+                "temperature": settings.TEMPERATURE,
+                "top_p": settings.TOP_P,
+                "stop": settings.STOP_SEQUENCES,
+                "stream": False,
+                "response_format": {"type": "json_object"},
+            }
+            resp = await client.post("/chat/completions", json=json_object_payload)
+
         resp.raise_for_status()
         data = resp.json()
         # OpenAI-compatible response shape
