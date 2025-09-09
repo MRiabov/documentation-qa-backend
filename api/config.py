@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     OPENROUTER_MODEL: str = "moonshotai/kimi-k2:free"
     OPENROUTER_FALLBACK_KEY: Optional[str] = None
 
+    # Force OpenRouter usage regardless of TGI health
+    FORCE_OPENROUTER: bool = False
+
     # Regeneration behavior
     RETRIES_ON_MALFORMED: int = (
         1  # number of extra attempts when model output is malformed

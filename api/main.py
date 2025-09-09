@@ -123,14 +123,17 @@ async def review(req: ReviewRequest):
             # Route to TGI when healthy; otherwise use OpenRouter fallback.
             # If TGI errors on request, automatically fall back.
             raw: str
-            tgi_ok = await _tgi.health()
-            if tgi_ok:
-                try:
-                    raw = await _tgi.generate(prompt)
-                except Exception:
-                    raw = await _openrouter.generate(prompt)
-            else:
+            if settings.FORCE_OPENROUTER:
                 raw = await _openrouter.generate(prompt)
+            else:
+                tgi_ok = await _tgi.health()
+                if tgi_ok:
+                    try:
+                        raw = await _tgi.generate(prompt)
+                    except Exception:
+                        raw = await _openrouter.generate(prompt)
+                else:
+                    raw = await _openrouter.generate(prompt)
             review = parse_review_response(raw)
 
             # Filter out model issues that duplicate linter spans when uniquely locatable

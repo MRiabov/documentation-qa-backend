@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import os
 from typing import List
+
+# Proselint caches in XDG_CACHE_HOME; set to /tmp for serverless (writable) envs like Vercel
+os.environ.setdefault("XDG_CACHE_HOME", "/tmp")
 
 from proselint.tools import lint as proselint_lint
 
